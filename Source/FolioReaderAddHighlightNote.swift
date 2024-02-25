@@ -14,7 +14,7 @@ class FolioReaderAddHighlightNote: UIViewController {
     var highlightLabel: UILabel!
     var scrollView: UIScrollView!
     var containerView = UIView()
-    var highlight: Highlight!
+    var highlight: HighlightIOS!
     var highlightSaved = false
     var isEditHighlight = false
     var resizedTextView = false
@@ -22,7 +22,7 @@ class FolioReaderAddHighlightNote: UIViewController {
     private var folioReader: FolioReader
     private var readerConfig: FolioReaderConfig
     
-    init(withHighlight highlight: Highlight, folioReader: FolioReader, readerConfig: FolioReaderConfig) {
+    init(withHighlight highlight: HighlightIOS, folioReader: FolioReader, readerConfig: FolioReaderConfig) {
         self.folioReader = folioReader
         self.highlight = highlight
         self.readerConfig = readerConfig

@@ -125,7 +125,7 @@ open class FolioReaderWebView: UIWebView {
 
     func remove(_ sender: UIMenuController?) {
         if let removedId = js("removeThisHighlight()") {
-            Highlight.removeById(withConfiguration: self.readerConfig, highlightId: removedId)
+            HighlightIOS.removeById(withConfiguration: self.readerConfig, highlightId: removedId)
         }
         setMenuVisible(false)
     }
@@ -157,8 +157,8 @@ open class FolioReaderWebView: UIWebView {
             }
 
             let pageNumber = folioReader.readerCenter?.currentPageNumber ?? 0
-            let match = Highlight.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
-            let highlight = Highlight.matchHighlight(match)
+            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
+            let highlight = HighlightIOS.matchHighlight(match)
             highlight?.persist(withConfiguration: self.readerConfig)
 
         } catch {
@@ -183,8 +183,8 @@ open class FolioReaderWebView: UIWebView {
             guard let bookId = (self.book.name as NSString?)?.deletingPathExtension else { return }
             
             let pageNumber = folioReader.readerCenter?.currentPageNumber ?? 0
-            let match = Highlight.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
-            if let highlight = Highlight.matchHighlight(match) {
+            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
+            if let highlight = HighlightIOS.matchHighlight(match) {
                 self.folioReader.readerCenter?.presentAddHighlightNote(highlight, edit: false)
             }
         } catch {
@@ -194,7 +194,7 @@ open class FolioReaderWebView: UIWebView {
     
     @objc func updateHighlightNote (_ sender: UIMenuController?) {
         guard let highlightId = js("getHighlightId()") else { return }
-        guard let highlightNote = Highlight.getById(withConfiguration: readerConfig, highlightId: highlightId) else { return }
+        guard let highlightNote = HighlightIOS.getById(withConfiguration: readerConfig, highlightId: highlightId) else { return }
         self.folioReader.readerCenter?.presentAddHighlightNote(highlightNote, edit: true)
     }
 
@@ -242,7 +242,7 @@ open class FolioReaderWebView: UIWebView {
         self.folioReader.currentHighlightStyle = style.rawValue
 
         if let updateId = js("setHighlightStyle('\(HighlightStyle.classForStyle(style.rawValue))')") {
-            Highlight.updateById(withConfiguration: self.readerConfig, highlightId: updateId, type: style)
+            HighlightIOS.updateById(withConfiguration: self.readerConfig, highlightId: updateId, type: style)
         }
         
         //FIX: https://github.com/FolioReader/FolioReaderKit/issues/316

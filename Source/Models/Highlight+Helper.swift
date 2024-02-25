@@ -79,7 +79,7 @@ public enum HighlightStyle: Int {
 /// :nodoc:
 public typealias Completion = (_ error: NSError?) -> ()
 
-extension Highlight {
+extension HighlightIOS {
 
     /// Save a Highlight with completion block
     ///
@@ -90,7 +90,7 @@ extension Highlight {
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
             realm.beginWrite()
-            realm.add(self, update: true)
+            realm.add(self, update: .all)
             try realm.commitWrite()
             completion?(nil)
         } catch let error as NSError {
@@ -122,12 +122,12 @@ extension Highlight {
     ///   - readerConfig: Current folio reader configuration.
     ///   - highlightId: The ID to be removed
     public static func removeById(withConfiguration readerConfig: FolioReaderConfig, highlightId: String) {
-        var highlight: Highlight?
+        var highlight: HighlightIOS?
         let predicate = NSPredicate(format:"highlightId = %@", highlightId)
 
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
-            highlight = realm.objects(Highlight.self).filter(predicate).toArray(Highlight.self).first
+            highlight = realm.objects(HighlightIOS.self).filter(predicate).toArray(HighlightIOS.self).first
             highlight?.remove(withConfiguration: readerConfig)
         } catch let error as NSError {
             print("Error on remove highlight by id: \(error)")
@@ -141,13 +141,13 @@ extension Highlight {
     ///   - highlightId: The ID to be removed
     ///   - page: Page number
     /// - Returns: Return a Highlight
-    public static func getById(withConfiguration readerConfig: FolioReaderConfig, highlightId: String) -> Highlight? {
-        var highlight: Highlight?
+    public static func getById(withConfiguration readerConfig: FolioReaderConfig, highlightId: String) -> HighlightIOS? {
+        var highlight: HighlightIOS?
         let predicate = NSPredicate(format:"highlightId = %@", highlightId)
 
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
-            highlight = realm.objects(Highlight.self).filter(predicate).toArray(Highlight.self).first
+            highlight = realm.objects(HighlightIOS.self).filter(predicate).toArray(HighlightIOS.self).first
             return highlight
         } catch let error as NSError {
             print("Error getting Highlight : \(error)")
@@ -163,11 +163,11 @@ extension Highlight {
     ///   - highlightId: The ID to be removed
     ///   - type: The `HighlightStyle`
     public static func updateById(withConfiguration readerConfig: FolioReaderConfig, highlightId: String, type: HighlightStyle) {
-        var highlight: Highlight?
+        var highlight: HighlightIOS?
         let predicate = NSPredicate(format:"highlightId = %@", highlightId)
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
-            highlight = realm.objects(Highlight.self).filter(predicate).toArray(Highlight.self).first
+            highlight = realm.objects(HighlightIOS.self).filter(predicate).toArray(HighlightIOS.self).first
             realm.beginWrite()
 
             highlight?.type = type.hashValue
@@ -187,8 +187,8 @@ extension Highlight {
     ///   - bookId: Book ID
     ///   - page: Page number
     /// - Returns: Return a list of Highlights
-    public static func allByBookId(withConfiguration readerConfig: FolioReaderConfig, bookId: String, andPage page: NSNumber? = nil) -> [Highlight] {
-        var highlights: [Highlight]?
+    public static func allByBookId(withConfiguration readerConfig: FolioReaderConfig, bookId: String, andPage page: NSNumber? = nil) -> [HighlightIOS] {
+        var highlights: [HighlightIOS]?
         var predicate = NSPredicate(format: "bookId = %@", bookId)
         if let page = page {
             predicate = NSPredicate(format: "bookId = %@ && page = %@", bookId, page)
@@ -196,7 +196,7 @@ extension Highlight {
 
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
-            highlights = realm.objects(Highlight.self).filter(predicate).toArray(Highlight.self)
+            highlights = realm.objects(HighlightIOS.self).filter(predicate).toArray(HighlightIOS.self)
             return (highlights ?? [])
         } catch let error as NSError {
             print("Error on fetch all by book Id: \(error)")
@@ -208,11 +208,11 @@ extension Highlight {
     ///
     /// - Parameter readerConfig: - readerConfig: Current folio reader configuration.
     /// - Returns: Return all Highlights
-    public static func all(withConfiguration readerConfig: FolioReaderConfig) -> [Highlight] {
-        var highlights: [Highlight]?
+    public static func all(withConfiguration readerConfig: FolioReaderConfig) -> [HighlightIOS] {
+        var highlights: [HighlightIOS]?
         do {
             let realm = try Realm(configuration: readerConfig.realmConfiguration)
-            highlights = realm.objects(Highlight.self).toArray(Highlight.self)
+            highlights = realm.objects(HighlightIOS.self).toArray(HighlightIOS.self)
             return (highlights ?? [])
         } catch let error as NSError {
             print("Error on fetch all: \(error)")
@@ -223,7 +223,7 @@ extension Highlight {
 
 // MARK: - HTML Methods
 
-extension Highlight {
+extension HighlightIOS {
 
     public struct MatchingHighlight {
         var text: String
@@ -237,27 +237,27 @@ extension Highlight {
     /**
      Match a highlight on string.
      */
-    public static func matchHighlight(_ matchingHighlight: MatchingHighlight) -> Highlight? {
+    public static func matchHighlight(_ matchingHighlight: MatchingHighlight) -> HighlightIOS? {
         let pattern = "<highlight id=\"\(matchingHighlight.id)\" onclick=\".*?\" class=\"(.*?)\">((.|\\s)*?)</highlight>"
         let regex = try? NSRegularExpression(pattern: pattern, options: [])
         let matches = regex?.matches(in: matchingHighlight.text, options: [], range: NSRange(location: 0, length: matchingHighlight.text.utf16.count))
         let str = (matchingHighlight.text as NSString)
 
-        let mapped = matches?.map { (match) -> Highlight in
+        let mapped = matches?.map { (match) -> HighlightIOS in
             var contentPre = str.substring(with: NSRange(location: match.range.location-kHighlightRange, length: kHighlightRange))
             var contentPost = str.substring(with: NSRange(location: match.range.location + match.range.length, length: kHighlightRange))
 
             // Normalize string before save
-            contentPre = Highlight.subString(ofContent: contentPre, fromRangeOfString: ">", withPattern: "((?=[^>]*$)(.|\\s)*$)")
-            contentPost = Highlight.subString(ofContent: contentPost, fromRangeOfString: "<", withPattern: "^((.|\\s)*?)(?=<)")
+            contentPre = HighlightIOS.subString(ofContent: contentPre, fromRangeOfString: ">", withPattern: "((?=[^>]*$)(.|\\s)*$)")
+            contentPost = HighlightIOS.subString(ofContent: contentPost, fromRangeOfString: "<", withPattern: "^((.|\\s)*?)(?=<)")
 
-            let highlight = Highlight()
+            let highlight = HighlightIOS()
             highlight.highlightId = matchingHighlight.id
             highlight.type = HighlightStyle.styleForClass(str.substring(with: match.range(at: 1))).rawValue
             highlight.date = Date()
-            highlight.content = Highlight.removeSentenceSpam(str.substring(with: match.range(at: 2)))
-            highlight.contentPre = Highlight.removeSentenceSpam(contentPre)
-            highlight.contentPost = Highlight.removeSentenceSpam(contentPost)
+            highlight.content = HighlightIOS.removeSentenceSpam(str.substring(with: match.range(at: 2)))
+            highlight.contentPre = HighlightIOS.removeSentenceSpam(contentPre)
+            highlight.contentPost = HighlightIOS.removeSentenceSpam(contentPost)
             highlight.page = matchingHighlight.currentPage
             highlight.bookId = matchingHighlight.bookId
             highlight.startOffset = (Int(matchingHighlight.startOffset) ?? -1)

@@ -10,7 +10,7 @@ import UIKit
 
 class FolioReaderHighlightList: UITableViewController {
 
-    fileprivate var highlights = [Highlight]()
+    fileprivate var highlights = [HighlightIOS]()
     fileprivate var readerConfig: FolioReaderConfig
     fileprivate var folioReader: FolioReader
 
@@ -38,7 +38,7 @@ class FolioReaderHighlightList: UITableViewController {
             return
         }
 
-        self.highlights = Highlight.allByBookId(withConfiguration: self.readerConfig, bookId: bookId)
+        self.highlights = HighlightIOS.allByBookId(withConfiguration: self.readerConfig, bookId: bookId)
     }
 
     // MARK: - Table view data source
@@ -190,7 +190,7 @@ class FolioReaderHighlightList: UITableViewController {
 
             if (highlight.page == self.folioReader.readerCenter?.currentPageNumber),
                 let page = self.folioReader.readerCenter?.currentPage {
-                Highlight.removeFromHTMLById(withinPage: page, highlightId: highlight.highlightId) // Remove from HTML
+                HighlightIOS.removeFromHTMLById(withinPage: page, highlightId: highlight.highlightId) // Remove from HTML
             }
 
             highlight.remove(withConfiguration: self.readerConfig) // Remove from Database

@@ -157,7 +157,7 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
             return tempHtmlContent as String
         }
 
-        let highlights = Highlight.allByBookId(withConfiguration: self.readerConfig, bookId: bookId, andPage: pageNumber as NSNumber?)
+        let highlights = HighlightIOS.allByBookId(withConfiguration: self.readerConfig, bookId: bookId, andPage: pageNumber as NSNumber?)
 
         if (highlights.count > 0) {
             for item in highlights {
@@ -172,7 +172,7 @@ open class FolioReaderPage: UICollectionViewCell, UIWebViewDelegate, UIGestureRe
                 
                 var locator = item.contentPre + item.content
                 locator += item.contentPost
-                locator = Highlight.removeSentenceSpam(locator) /// Fix for Highlights
+                locator = HighlightIOS.removeSentenceSpam(locator) /// Fix for Highlights
                 
                 let range: NSRange = tempHtmlContent.range(of: locator, options: .literal)
                 

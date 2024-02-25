@@ -10,7 +10,7 @@ import Foundation
 import RealmSwift
 
 /// A Highlight object
-open class Highlight: Object {
+open class HighlightIOS: Object {
     @objc open dynamic var bookId: String!
     @objc open dynamic var content: String!
     @objc open dynamic var contentPost: String!
