@@ -160,7 +160,7 @@ extension FolioReader {
     ///   - config: FolioReader configuration.
     ///   - shouldRemoveEpub: Boolean to remove the epub or not. Default true.
     ///   - animated: Pass true to animate the presentation; otherwise, pass false.
-    open func presentReader(parentViewController: UIViewController, withEpubPath epubPath: String, unzipPath: String? = nil, andConfig config: FolioReaderConfig, shouldRemoveEpub: Bool = true, animated:
+    public func presentReader(parentViewController: UIViewController, withEpubPath epubPath: String, unzipPath: String? = nil, andConfig config: FolioReaderConfig, shouldRemoveEpub: Bool = true, animated:
         Bool = true) {
         let readerContainer = FolioReaderContainer(withConfig: config, folioReader: self, epubPath: epubPath, unzipPath: unzipPath, removeEpub: shouldRemoveEpub)
         self.readerContainer = readerContainer
@@ -179,7 +179,7 @@ extension FolioReader {
     }
 
     /// Check if current theme is Night mode
-    open var nightMode: Bool {
+    public var nightMode: Bool {
         get { return self.defaults.bool(forKey: kNightMode) }
         set (value) {
             self.defaults.set(value, forKey: kNightMode)
@@ -199,7 +199,7 @@ extension FolioReader {
     }
 
     /// Check current font name. Default .andada
-    open var currentFont: FolioReaderFont {
+    public var currentFont: FolioReaderFont {
         get {
             guard
                 let rawValue = self.defaults.value(forKey: kCurrentFontFamily) as? Int,
@@ -216,7 +216,7 @@ extension FolioReader {
     }
 
     /// Check current font size. Default .m
-    open var currentFontSize: FolioReaderFontSize {
+    public var currentFontSize: FolioReaderFontSize {
         get {
             guard
                 let rawValue = self.defaults.value(forKey: kCurrentFontSize) as? Int,
@@ -238,7 +238,7 @@ extension FolioReader {
     }
 
     /// Check current audio rate, the speed of speech voice. Default 0
-    open var currentAudioRate: Int {
+    public var currentAudioRate: Int {
         get { return self.defaults.integer(forKey: kCurrentAudioRate) }
         set (value) {
             self.defaults.set(value, forKey: kCurrentAudioRate)
@@ -246,7 +246,7 @@ extension FolioReader {
     }
 
     /// Check the current highlight style.Default 0
-    open var currentHighlightStyle: Int {
+    public var currentHighlightStyle: Int {
         get { return self.defaults.integer(forKey: kCurrentHighlightStyle) }
         set (value) {
             self.defaults.set(value, forKey: kCurrentHighlightStyle)
@@ -254,7 +254,7 @@ extension FolioReader {
     }
 
     /// Check the current Media Overlay or TTS style
-    open var currentMediaOverlayStyle: MediaOverlayStyle {
+    public var currentMediaOverlayStyle: MediaOverlayStyle {
         get {
             guard let rawValue = self.defaults.value(forKey: kCurrentMediaOverlayStyle) as? Int,
                 let style = MediaOverlayStyle(rawValue: rawValue) else {
@@ -268,7 +268,7 @@ extension FolioReader {
     }
 
     /// Check the current scroll direction. Default .defaultVertical
-    open var currentScrollDirection: Int {
+    public var currentScrollDirection: Int {
         get {
             guard let value = self.defaults.value(forKey: kCurrentScrollDirection) as? Int else {
                 return FolioReaderScrollDirection.defaultVertical.rawValue
@@ -284,14 +284,14 @@ extension FolioReader {
         }
     }
 
-    open var currentMenuIndex: Int {
+    public var currentMenuIndex: Int {
         get { return self.defaults.integer(forKey: kCurrentTOCMenu) }
         set (value) {
             self.defaults.set(value, forKey: kCurrentTOCMenu)
         }
     }
 
-    open var savedPositionForCurrentBook: [String: Any]? {
+    public var savedPositionForCurrentBook: [String: Any]? {
         get {
             guard let bookId = self.readerContainer?.book.name else {
                 return nil
@@ -317,15 +317,15 @@ extension FolioReader {
     /**
      Read Cover Image and Return an `UIImage`
      */
-    open class func getCoverImage(_ epubPath: String, unzipPath: String? = nil) throws -> UIImage {
+    public class func getCoverImage(_ epubPath: String, unzipPath: String? = nil) throws -> UIImage {
         return try FREpubParser().parseCoverImage(epubPath, unzipPath: unzipPath)
     }
 
-    open class func getTitle(_ epubPath: String, unzipPath: String? = nil) throws -> String {
+    public class func getTitle(_ epubPath: String, unzipPath: String? = nil) throws -> String {
         return try FREpubParser().parseTitle(epubPath, unzipPath: unzipPath)
     }
 
-    open class func getAuthorName(_ epubPath: String, unzipPath: String? = nil) throws-> String {
+    public class func getAuthorName(_ epubPath: String, unzipPath: String? = nil) throws-> String {
         return try FREpubParser().parseAuthorName(epubPath, unzipPath: unzipPath)
     }
 }

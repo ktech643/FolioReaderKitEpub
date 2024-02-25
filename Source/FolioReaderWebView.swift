@@ -145,37 +145,38 @@ open class FolioReaderWebView: WKWebView {
 
     @objc func highlight(_ sender: UIMenuController?) {
         js("highlightString('\(HighlightStyle.classForStyle(self.folioReader.currentHighlightStyle))')") { highlightAndReturn in
-            let jsonData = highlightAndReturn?.data(using: String.Encoding.utf8)
-
-            do {
-                let json = try JSONSerialization.jsonObject(with: jsonData!, options: []) as! NSArray
-                let dic = json.firstObject as! [String: String]
-                let rect = NSCoder.cgRect(for: dic["rect"]!)
-                guard let startOffset = dic["startOffset"] else {
-                    return
-                }
-                guard let endOffset = dic["endOffset"] else {
-                    return
-                }
-
-                self.createMenu(options: true)
-                self.setMenuVisible(true, andRect: rect)
-
-                // Persist
-                self.js("getHTML()") { html in
+            if let jsonData = highlightAndReturn?.data(using: String.Encoding.utf8) {
+                do {
                     
-                    guard let html = html, let identifier = dic["id"], let bookId = (self.book.name as NSString?)?.deletingPathExtension
-                        else {
-                            return
+                    let json = try JSONSerialization.jsonObject(with: jsonData, options: []) as? NSArray ?? NSArray()
+                    let dic = json.firstObject as! [String: String]
+                    let rect = NSCoder.cgRect(for: dic["rect"]!)
+                    guard let startOffset = dic["startOffset"] else {
+                        return
                     }
-                    let pageNumber = self.folioReader.readerCenter?.currentPageNumber ?? 0
-                    let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
-                    let highlight = HighlightIOS.matchHighlight(match)
-                    highlight?.persist(withConfiguration: self.readerConfig)
+                    guard let endOffset = dic["endOffset"] else {
+                        return
+                    }
+
+                    self.createMenu(options: true)
+                    self.setMenuVisible(true, andRect: rect)
+
+                    // Persist
+                    self.js("getHTML()") { html in
+                        
+                        guard let html = html, let identifier = dic["id"], let bookId = (self.book.name as NSString?)?.deletingPathExtension
+                            else {
+                                return
+                        }
+                        let pageNumber = self.folioReader.readerCenter?.currentPageNumber ?? 0
+                        let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
+                        let highlight = HighlightIOS.matchHighlight(match)
+                        highlight?.persist(withConfiguration: self.readerConfig)
+                    }
+                    
+                } catch {
+                    print("Could not receive JSON:", error)
                 }
-                
-            } catch {
-                print("Could not receive JSON:", error)
             }
         }
     }
