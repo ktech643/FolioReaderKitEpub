@@ -5,9 +5,7 @@
 //  Created by Kevin Jantzer on 1/6/16.
 //  Copyright (c) 2016 Folio Reader. All rights reserved.
 //
-
 import UIKit
-import WebKit
 
 class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureRecognizerDelegate {
 
@@ -44,7 +42,7 @@ class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureR
 
         // Menu view
         menuView = UIView(frame: CGRect(x: 0, y: view.frame.height-165, width: view.frame.width, height: view.frame.height))
-        menuView.backgroundColor = self.folioReader.isNight(self.readerConfig.nightModeNavBackground, self.readerConfig.daysModeNavBackground)
+        menuView.backgroundColor = self.folioReader.isNight(self.readerConfig.nightModeMenuBackground, UIColor.white)
         menuView.autoresizingMask = .flexibleWidth
         menuView.layer.shadowColor = UIColor.black.cgColor
         menuView.layer.shadowOffset = CGSize(width: 0, height: 0)
@@ -63,7 +61,6 @@ class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureR
         let gutterX = (Int(view.frame.width) - (size * 3 ) - (padX * 4) ) / 2
 
         //let btnX = (Int(view.frame.width) - (size * 3)) / 4
-
         // get icon images
         let play = UIImage(readerImageNamed: "play-icon")
         let pause = UIImage(readerImageNamed: "pause-icon")
@@ -224,13 +221,11 @@ class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureR
     }
 
     // MARK: - Status Bar
-
     override var prefersStatusBarHidden : Bool {
         return (self.readerConfig.shouldHideNavigationOnTap == true)
     }
 
     // MARK: - SMSegmentView delegate
-
     func segmentView(_ segmentView: SMSegmentView, didSelectSegmentAtIndex index: Int) {
         guard viewDidAppear else { return }
 
@@ -268,7 +263,7 @@ class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureR
 
         // update the current page style
         if let currentPage = self.folioReader.readerCenter?.currentPage {
-            currentPage.webView?.js("setMediaOverlayStyle(\"\(self.folioReader.currentMediaOverlayStyle.className())\")")
+            currentPage.webView?.js("setMediaOverlayStyle(\"\(self.folioReader.currentMediaOverlayStyle.className())\")") { _ in }
         }
     }
 
@@ -293,62 +288,4 @@ class FolioReaderPlayerMenu: UIViewController, SMSegmentViewDelegate, UIGestureR
         }
         return false
     }
-}
-
-class FolioReaderScript: WKUserScript {
-    
-    init(source: String) {
-        if #available(iOS 14.0, *) {
-            super.init(source: source, injectionTime: .atDocumentEnd, forMainFrameOnly: true, in: .defaultClient)
-        } else {
-            // Fallback on earlier versions
-            super.init(source: source,
-                       injectionTime: .atDocumentEnd,
-                       forMainFrameOnly: true)
-        }
-    }
-    
-    static let bridgeJS: FolioReaderScript = {
-        let jsURL = Bundle.frameworkBundle().url(forResource: "Bridge", withExtension: "js")!
-        let jsSource = try! String(contentsOf: jsURL)
-        return FolioReaderScript(source: jsSource)
-    }()
-    
-    static let cssInjection: FolioReaderScript = {
-        let cssURL = Bundle.frameworkBundle().url(forResource: "Style", withExtension: "css")!
-        let cssString = try! String(contentsOf: cssURL)
-        return FolioReaderScript(source: cssInjectionSource(for: cssString))
-    }()
-    
-    static func cssInjection(overflow: String) -> FolioReaderScript {
-        let cssString = "html{overflow:\(overflow)}"
-        return FolioReaderScript(source: cssInjectionSource(for: cssString))
-    }
-    
-    private static func cssInjectionSource(for content: String) -> String {
-        let oneLineContent = content.components(separatedBy: .newlines).joined()
-        let source = """
-        var style = document.createElement('style');
-        style.type = 'text/css'
-        style.innerHTML = '\(oneLineContent)';
-        document.head.appendChild(style);
-        """
-        return source
-    }
-    
-}
-
-extension WKUserScript {
-    
-    func addIfNeeded(to webView: WKWebView?) {
-        guard let controller = webView?.configuration.userContentController else { return }
-        let alreadyAdded = controller.userScripts.contains { [unowned self] in
-            return $0.source == self.source &&
-                $0.injectionTime == self.injectionTime &&
-                $0.isForMainFrameOnly == self.isForMainFrameOnly
-        }
-        if alreadyAdded { return }
-        controller.addUserScript(self)
-    }
-    
 }

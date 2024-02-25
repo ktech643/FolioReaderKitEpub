@@ -4,7 +4,6 @@
 //
 //  Created by ShuichiNagao on 2018/05/06.
 //
-
 import UIKit
 import RealmSwift
 
@@ -67,7 +66,7 @@ class FolioReaderAddHighlightNote: UIViewController {
         
         if !highlightSaved && !isEditHighlight {
             guard let currentPage = folioReader.readerCenter?.currentPage else { return }
-            currentPage.webView?.js("removeThisHighlight()")
+            currentPage.webView?.js("removeThisHighlight()") { _ in }
         }
     }
     
@@ -109,6 +108,7 @@ class FolioReaderAddHighlightNote: UIViewController {
         let rightConstraint = NSLayoutConstraint(item: textView!, attribute: .right, relatedBy: .equal, toItem: containerView, attribute: .right, multiplier: 1.0, constant: -20)
         let topConstraint = NSLayoutConstraint(item: textView, attribute: .top, relatedBy: .equal, toItem: containerView, attribute: .top, multiplier: 1, constant: 100)
         let heiConstraint = NSLayoutConstraint(item: textView, attribute: .height, relatedBy: .equal, toItem: nil, attribute: .height, multiplier: 1, constant: view.frame.height - 100)
+        
         containerView.addConstraints([leftConstraint, rightConstraint, topConstraint, heiConstraint])
     }
     

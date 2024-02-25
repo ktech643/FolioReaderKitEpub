@@ -5,12 +5,10 @@
 //  Created by Heberti Almeida on 08/04/15.
 //  Copyright (c) 2015 Folio Reader. All rights reserved.
 //
-
 import Foundation
 import UIKit
 
 // MARK: - Internal constants
-
 internal let kApplicationDocumentsDirectory = NSSearchPathForDirectoriesInDomains(.documentDirectory, .userDomainMask, true)[0]
 internal let kCurrentFontFamily = "com.folioreader.kCurrentFontFamily"
 internal let kCurrentFontSize = "com.folioreader.kCurrentFontSize"
@@ -148,7 +146,6 @@ open class FolioReader: NSObject {
 }
 
 // MARK: - Present FolioReader
-
 extension FolioReader {
 
     /// Present a Folio Reader Container modally on a Parent View Controller.
@@ -156,22 +153,21 @@ extension FolioReader {
     /// - Parameters:
     ///   - parentViewController: View Controller that will present the reader container.
     ///   - epubPath: String representing the path on the disk of the ePub file. Must not be nil nor empty string.
-	///   - unzipPath: Path to unzip the compressed epub.
+    ///   - unzipPath: Path to unzip the compressed epub.
     ///   - config: FolioReader configuration.
     ///   - shouldRemoveEpub: Boolean to remove the epub or not. Default true.
     ///   - animated: Pass true to animate the presentation; otherwise, pass false.
     open func presentReader(parentViewController: UIViewController, withEpubPath epubPath: String, unzipPath: String? = nil, andConfig config: FolioReaderConfig, shouldRemoveEpub: Bool = true, animated:
         Bool = true) {
         let readerContainer = FolioReaderContainer(withConfig: config, folioReader: self, epubPath: epubPath, unzipPath: unzipPath, removeEpub: shouldRemoveEpub)
+        readerContainer.modalPresentationStyle = .overFullScreen
         self.readerContainer = readerContainer
-        self.readerCenter?.modalPresentationStyle = .fullScreen
         parentViewController.present(readerContainer, animated: animated, completion: nil)
         addObservers()
     }
 }
 
 // MARK: -  Getters and setters for stored values
-
 extension FolioReader {
 
     public func register(defaults: [String: Any]) {
@@ -186,7 +182,7 @@ extension FolioReader {
 
             if let readerCenter = self.readerCenter {
                 UIView.animate(withDuration: 0.6, animations: {
-                    _ = readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))")
+                    _ = readerCenter.currentPage?.webView?.js("nightMode(\(self.nightMode))") { _ in }
                     readerCenter.pageIndicatorView?.reloadColors()
                     readerCenter.configureNavBar()
                     readerCenter.scrollScrubber?.reloadColors()
@@ -211,7 +207,7 @@ extension FolioReader {
         }
         set (font) {
             self.defaults.set(font.rawValue, forKey: kCurrentFontFamily)
-            _ = self.readerCenter?.currentPage?.webView?.js("setFontName('\(font.cssIdentifier)')")
+            _ = self.readerCenter?.currentPage?.webView?.js("setFontName('\(font.cssIdentifier)')") { _ in }
         }
     }
 
@@ -233,7 +229,7 @@ extension FolioReader {
                 return
             }
 
-            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')")
+            currentPage.webView?.js("setFontSize('\(currentFontSize.cssIdentifier)')") { _ in }
         }
     }
 
@@ -308,12 +304,10 @@ extension FolioReader {
 }
 
 // MARK: - Metadata
-
 extension FolioReader {
 
     // TODO QUESTION: The static `getCoverImage` function used the shared instance before and ignored the `unzipPath` parameter.
     // Should we properly implement the parameter (what has been done now) or should change the API to only use the current FolioReader instance?
-
     /**
      Read Cover Image and Return an `UIImage`
      */
@@ -331,7 +325,6 @@ extension FolioReader {
 }
 
 // MARK: - Exit, save and close FolioReader
-
 extension FolioReader {
 
     /// Save Reader state, book, page and scroll offset.
