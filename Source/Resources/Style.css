@@ -34,12 +34,16 @@ footer, header, hgroup, menu, nav, section {
 html {
     -webkit-text-size-adjust: none; /* Never autoresize text */
     padding: 0 0 !important;
-    overflow: hidden;
+    overflow: paged-x;
+    overflow: -webkit-paged-x;
+    overflow: -o-paged-x;
 }
 
 body {
     padding: 40px 20px !important;
-    overflow: hidden !important;
+    overflow: paged-x;
+    overflow: -webkit-paged-x;
+    overflow: -o-paged-x;
 }
 
 * {
