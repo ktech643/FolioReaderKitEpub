@@ -30,11 +30,11 @@ Pod::Spec.new do |s|
   s.public_header_files = 'Source/*.h'
 
   s.libraries  = "z"
-  s.dependency 'SSZipArchive', '2.1.1'
-  s.dependency 'MenuItemKit', '3.1.3'
+  s.dependency 'SSZipArchive', '2.2.3'
+  s.dependency 'MenuItemKit', '4.0.1'
   s.dependency 'ZFDragableModalTransition', '0.6'
-  s.dependency 'AEXML', '4.3.3'
-  s.dependency 'FontBlaster', '4.1.0'
-  s.dependency 'RealmSwift', '3.17.3'
+  s.dependency 'AEXML', '4.6.0'
+  s.dependency 'FontBlaster', '5.1.1'
+  s.dependency 'RealmSwift', '5.5.1'
 
 end
