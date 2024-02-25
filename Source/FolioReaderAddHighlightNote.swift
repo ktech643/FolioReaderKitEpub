@@ -67,7 +67,9 @@ class FolioReaderAddHighlightNote: UIViewController {
         
         if !highlightSaved && !isEditHighlight {
             guard let currentPage = folioReader.readerCenter?.currentPage else { return }
-            currentPage.webView?.js("removeThisHighlight()")
+            currentPage.webView?.js("removeThisHighlight()",completion: { result in
+                
+            })
         }
     }
     

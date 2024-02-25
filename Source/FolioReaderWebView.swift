@@ -7,9 +7,10 @@
 //
 
 import UIKit
+import WebKit
 
 /// The custom WebView used in each page
-open class FolioReaderWebView: UIWebView {
+open class FolioReaderWebView: WKWebView {
     var isColors = false
     var isShare = false
     var isOneWord = false
@@ -31,14 +32,14 @@ open class FolioReaderWebView: UIWebView {
         return readerContainer.folioReader
     }
 
-    override init(frame: CGRect) {
-        fatalError("use init(frame:readerConfig:book:) instead.")
-    }
-
     init(frame: CGRect, readerContainer: FolioReaderContainer) {
         self.readerContainer = readerContainer
 
-        super.init(frame: frame)
+        let configuration = WKWebViewConfiguration()
+        configuration.dataDetectorTypes = .link
+        super.init(frame: frame, configuration: configuration)
+//        readerContainer.cssInjection.addIfNeeded(to: self)
+//        readerContainer.bridgeJS.addIfNeeded(to: self)
     }
 
     required public init?(coder aDecoder: NSCoder) {
@@ -77,27 +78,35 @@ open class FolioReaderWebView: UIWebView {
 
         let shareImage = UIAlertAction(title: self.readerConfig.localizedShareImageQuote, style: .default, handler: { (action) -> Void in
             if self.isShare {
-                if let textToShare = self.js("getHighlightContent()") {
-                    self.folioReader.readerCenter?.presentQuoteShare(textToShare)
+                self.js("getHighlightContent()") { result in
+                    if let textToShare = result as? String {
+                        self.folioReader.readerCenter?.presentQuoteShare(textToShare)
+                    }
                 }
             } else {
-                if let textToShare = self.js("getSelectedText()") {
-                    self.folioReader.readerCenter?.presentQuoteShare(textToShare)
-
-                    self.clearTextSelection()
+                self.js("getSelectedText()") { result in
+                    if let textToShare = result as? String {
+                        self.folioReader.readerCenter?.presentQuoteShare(textToShare)
+                        self.clearTextSelection()
+                    }
                 }
+                
             }
             self.setMenuVisible(false)
         })
 
         let shareText = UIAlertAction(title: self.readerConfig.localizedShareTextQuote, style: .default) { (action) -> Void in
             if self.isShare {
-                if let textToShare = self.js("getHighlightContent()") {
-                    self.folioReader.readerCenter?.shareHighlight(textToShare, rect: sender.menuFrame)
+                self.js("getHighlightContent()") { result in
+                    if let textToShare = result as? String {
+                        self.folioReader.readerCenter?.shareHighlight(textToShare, rect: sender.menuFrame)
+                    }
                 }
             } else {
-                if let textToShare = self.js("getSelectedText()") {
-                    self.folioReader.readerCenter?.shareHighlight(textToShare, rect: sender.menuFrame)
+                self.js("getSelectedText()") { result in
+                    if let textToShare = result as? String {
+                        self.folioReader.readerCenter?.shareHighlight(textToShare, rect: sender.menuFrame)
+                    }
                 }
             }
             self.setMenuVisible(false)
@@ -124,92 +133,113 @@ open class FolioReaderWebView: UIWebView {
     }
 
     func remove(_ sender: UIMenuController?) {
-        if let removedId = js("removeThisHighlight()") {
-            HighlightIOS.removeById(withConfiguration: self.readerConfig, highlightId: removedId)
+        js("removeThisHighlight()") { result in
+            if let removedId = result as? String {
+                HighlightIOS.removeById(withConfiguration: self.readerConfig, highlightId: removedId)
+            }
         }
         setMenuVisible(false)
     }
 
     @objc func highlight(_ sender: UIMenuController?) {
-        let highlightAndReturn = js("highlightString('\(HighlightStyle.classForStyle(self.folioReader.currentHighlightStyle))')")
-        let jsonData = highlightAndReturn?.data(using: String.Encoding.utf8)
+        js("highlightString('\(HighlightStyle.classForStyle(self.folioReader.currentHighlightStyle))')") { result in
+            if let highlightAndReturn = result as? String {
+                let jsonData = highlightAndReturn.data(using: String.Encoding.utf8)
 
-        do {
-            let json = try JSONSerialization.jsonObject(with: jsonData!, options: []) as! NSArray
-            let dic = json.firstObject as! [String: String]
-            let rect = NSCoder.cgRect(for: dic["rect"]!)
-            guard let startOffset = dic["startOffset"] else {
-                return
+                do {
+                    let json = try JSONSerialization.jsonObject(with: jsonData!, options: []) as! NSArray
+                    let dic = json.firstObject as! [String: String]
+                    let rect = NSCoder.cgRect(for: dic["rect"]!)
+                    guard let startOffset = dic["startOffset"] else {
+                        return
+                    }
+                    guard let endOffset = dic["endOffset"] else {
+                        return
+                    }
+
+                    self.createMenu(options: true)
+                    self.setMenuVisible(true, andRect: rect)
+
+                    // Persist
+                    self.js("getHTML()") { result in
+                        if let html = result as? String {
+                            guard
+                                let identifier = dic["id"],
+                                let bookId = (self.book.name as NSString?)?.deletingPathExtension else {
+                                    return
+                            }
+
+                            let pageNumber = self.folioReader.readerCenter?.currentPageNumber ?? 0
+                            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
+                            let highlight = HighlightIOS.matchHighlight(match)
+                            highlight?.persist(withConfiguration: self.readerConfig)
+                        }
+                    }
+
+                } catch {
+                    print("Could not receive JSON")
+                }
             }
-            guard let endOffset = dic["endOffset"] else {
-                return
-            }
-
-            createMenu(options: true)
-            setMenuVisible(true, andRect: rect)
-
-            // Persist
-            guard
-                let html = js("getHTML()"),
-                let identifier = dic["id"],
-                let bookId = (self.book.name as NSString?)?.deletingPathExtension else {
-                    return
-            }
-
-            let pageNumber = folioReader.readerCenter?.currentPageNumber ?? 0
-            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
-            let highlight = HighlightIOS.matchHighlight(match)
-            highlight?.persist(withConfiguration: self.readerConfig)
-
-        } catch {
-            print("Could not receive JSON")
         }
     }
     
     @objc func highlightWithNote(_ sender: UIMenuController?) {
-        let highlightAndReturn = js("highlightStringWithNote('\(HighlightStyle.classForStyle(self.folioReader.currentHighlightStyle))')")
-        let jsonData = highlightAndReturn?.data(using: String.Encoding.utf8)
-        
-        do {
-            let json = try JSONSerialization.jsonObject(with: jsonData!, options: []) as! NSArray
-            let dic = json.firstObject as! [String: String]
-            guard let startOffset = dic["startOffset"] else { return }
-            guard let endOffset = dic["endOffset"] else { return }
-            
-            self.clearTextSelection()
-            
-            guard let html = js("getHTML()") else { return }
-            guard let identifier = dic["id"] else { return }
-            guard let bookId = (self.book.name as NSString?)?.deletingPathExtension else { return }
-            
-            let pageNumber = folioReader.readerCenter?.currentPageNumber ?? 0
-            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
-            if let highlight = HighlightIOS.matchHighlight(match) {
-                self.folioReader.readerCenter?.presentAddHighlightNote(highlight, edit: false)
+        js("highlightStringWithNote('\(HighlightStyle.classForStyle(self.folioReader.currentHighlightStyle))')") { result in
+            if let highlightAndReturn = result as? String {
+                let jsonData = highlightAndReturn.data(using: String.Encoding.utf8)
+                
+                do {
+                    let json = try JSONSerialization.jsonObject(with: jsonData!, options: []) as! NSArray
+                    let dic = json.firstObject as! [String: String]
+                    guard let startOffset = dic["startOffset"] else { return }
+                    guard let endOffset = dic["endOffset"] else { return }
+                    
+                    self.clearTextSelection()
+                    self.js("getHTML()") { result in
+                        if let html = result as? String {
+                            guard let identifier = dic["id"] else { return }
+                            guard let bookId = (self.book.name as NSString?)?.deletingPathExtension else { return }
+                            
+                            let pageNumber = self.folioReader.readerCenter?.currentPageNumber ?? 0
+                            let match = HighlightIOS.MatchingHighlight(text: html, id: identifier, startOffset: startOffset, endOffset: endOffset, bookId: bookId, currentPage: pageNumber)
+                            if let highlight = HighlightIOS.matchHighlight(match) {
+                                self.folioReader.readerCenter?.presentAddHighlightNote(highlight, edit: false)
+                            }
+                        }
+                    }
+                                        
+                } catch {
+                    print("Could not receive JSON")
+                }
             }
-        } catch {
-            print("Could not receive JSON")
         }
     }
     
     @objc func updateHighlightNote (_ sender: UIMenuController?) {
-        guard let highlightId = js("getHighlightId()") else { return }
-        guard let highlightNote = HighlightIOS.getById(withConfiguration: readerConfig, highlightId: highlightId) else { return }
-        self.folioReader.readerCenter?.presentAddHighlightNote(highlightNote, edit: true)
+        js("getHighlightId()") { result in
+            if let highlightId = result as? String {
+                guard let highlightNote = HighlightIOS.getById(withConfiguration: self.readerConfig, highlightId: highlightId) else { return }
+                self.folioReader.readerCenter?.presentAddHighlightNote(highlightNote, edit: true)
+            }
+        }
+    //    guard let highlightId = js("getHighlightId()") else { return }
+       
     }
 
     @objc func define(_ sender: UIMenuController?) {
-        guard let selectedText = js("getSelectedText()") else {
-            return
+        js("getSelectedText()") { result in
+            if let selectedText = result as? String {
+                
+                self.setMenuVisible(false)
+                self.clearTextSelection()
+
+                let vc = UIReferenceLibraryViewController(term: selectedText)
+                vc.view.tintColor = self.readerConfig.tintColor
+                guard let readerContainer = self.readerContainer else { return }
+                readerContainer.show(vc, sender: nil)
+            }
         }
-
-        self.setMenuVisible(false)
-        self.clearTextSelection()
-
-        let vc = UIReferenceLibraryViewController(term: selectedText)
-        vc.view.tintColor = self.readerConfig.tintColor
-        guard let readerContainer = readerContainer else { return }
-        readerContainer.show(vc, sender: nil)
+       
     }
 
     @objc func play(_ sender: UIMenuController?) {
@@ -240,9 +270,10 @@ open class FolioReaderWebView: UIWebView {
 
     func changeHighlightStyle(_ sender: UIMenuController?, style: HighlightStyle) {
         self.folioReader.currentHighlightStyle = style.rawValue
-
-        if let updateId = js("setHighlightStyle('\(HighlightStyle.classForStyle(style.rawValue))')") {
-            HighlightIOS.updateById(withConfiguration: self.readerConfig, highlightId: updateId, type: style)
+        js("setHighlightStyle('\(HighlightStyle.classForStyle(style.rawValue))')") { result in
+            if let updateId = result as? String {
+                HighlightIOS.updateById(withConfiguration: self.readerConfig, highlightId: updateId, type: style)
+            }
         }
         
         //FIX: https://github.com/FolioReader/FolioReaderKit/issues/316
@@ -346,10 +377,15 @@ open class FolioReaderWebView: UIWebView {
     
     // MARK: - Java Script Bridge
     
-    @discardableResult open func js(_ script: String) -> String? {
-        let callback = self.stringByEvaluatingJavaScript(from: script)
-        if callback!.isEmpty { return nil }
-        return callback
+    open func js(_ script: String, completion: @escaping (_ result: Any?) -> Void) {
+        self.evaluate(script: script) { result, error in
+            if let resp = result as? String {
+                completion(resp)
+            }else {
+                completion(nil)
+            }
+        }
+        
     }
     
     // MARK: WebView
@@ -366,15 +402,36 @@ open class FolioReaderWebView: UIWebView {
         switch self.readerConfig.scrollDirection {
         case .vertical, .defaultVertical, .horizontalWithVerticalContent:
             scrollView.isPagingEnabled = false
-            paginationMode = .unpaginated
+ //           paginationMode = .unpaginated
             scrollView.bounces = true
             break
         case .horizontal:
             scrollView.isPagingEnabled = true
-            paginationMode = .leftToRight
-            paginationBreakingMode = .page
+//            paginationMode = .leftToRight
+//            paginationBreakingMode = .page
             scrollView.bounces = false
             break
+        }
+    }
+}
+
+extension WKWebView {
+    func evaluate(script: String, completion: @escaping (_ result: Any?, _ error: Error?) -> Void) {
+        var finished = false
+
+        evaluateJavaScript(script) { (result, error) in
+            if error == nil {
+                if result != nil {
+                    completion(result, nil)
+                }
+            } else {
+                completion(nil, error)
+            }
+            finished = true
+        }
+
+        while !finished {
+            RunLoop.current.run(mode: .default, before: Date.distantFuture)
         }
     }
 }
