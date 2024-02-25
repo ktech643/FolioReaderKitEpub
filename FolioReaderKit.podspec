@@ -14,7 +14,7 @@ Pod::Spec.new do |s|
   s.social_media_url = 'https://twitter.com/hebertialmeida'
 
   s.swift_version = '4.2'
-  s.platform      = :ios, '9.0'
+  s.platform      = :ios, '10.0'
   s.requires_arc  = true
 
   s.source_files = [
@@ -30,11 +30,11 @@ Pod::Spec.new do |s|
   s.public_header_files = 'Source/*.h'
 
   s.libraries  = "z"
-  s.dependency 'SSZipArchive', '2.2.3'
-  s.dependency 'MenuItemKit', '4.0.1'
+  s.dependency 'SSZipArchive', '2.1.1'
+  s.dependency 'MenuItemKit', '3.1.3'
   s.dependency 'ZFDragableModalTransition', '0.6'
-  s.dependency 'AEXML', '4.6.0'
-  s.dependency 'FontBlaster', '5.1.1'
-  s.dependency 'RealmSwift', '5.5.1'
+  s.dependency 'AEXML', '4.3.3'
+  s.dependency 'FontBlaster', '4.1.0'
+  s.dependency 'RealmSwift', '3.17.3'
 
 end
